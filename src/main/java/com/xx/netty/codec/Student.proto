@@ -1,0 +1,36 @@
+syntax = "proto3";
+option optimize_for = SPEED;
+option java_package = "com.xx.netty.codec";
+option java_outer_classname = "MyDataInfo";
+
+
+// 用message管理其他message
+message MyMessage{
+
+  // 枚举类型 Proto3编号从0开始
+  enum DataType{
+    StudentType = 0;
+    WorkerType = 1;
+  }
+
+  // 表示是哪个枚举类型
+  DataType data_type = 1;
+
+  // 表示每次枚举类型最多只能出现其中一个 节省空间
+  oneof dataBody{
+      Stundent stundent = 2;
+      Worker worker = 3;
+   }
+
+}
+
+message Stundent{
+  int32 id = 1;
+  string name = 2;
+}
+
+message Worker {
+  string name = 1;
+  int32 age = 2;
+
+}

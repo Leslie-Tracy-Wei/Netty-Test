@@ -194,3 +194,47 @@ Netty模型:
 		0---readerIndex 已经读取的区域
 		readerIndex --- writerIndex 可读区域
 		writerIndex --- capacity 可写区域
+
+	Netty心跳检测机制:
+		当服务器超过3秒没有读时，就提示读空闲
+		当服务器超过5秒没有写操作时，就提示写空闲
+		当服务器超过7秒没有读或者写操作时，就提示读写空闲
+	WebSocket编程:
+	    http协议是无状态的，每次都会重新连接一次
+	    基于webSocket的长连接实现全双工通讯
+
+    编码、解码:
+        C端-> 业务数据 --- 编码 ->  服务端 ----解码 ---- 对应的业务数据
+        codec 包含 decoder encoder
+        netty自身提供codec
+            StringEncoder:对字符串数据进行编码
+            ObjectEncoder: 底层还是使用java序列化的技术，无法实现跨语言 序列化后体积太大 性能太低
+            改进:
+                Protobuf: Google
+                    做数据存储 /RPC【remote procedure call】 远程过程调用
+                    http + json -》 tcp + protobuf
+                    以message来管理数据的
+                    支持跨平台 跨语言 支持巨大多数语言
+                    高性能 高可靠性
+                    .proto文件 -> protoc.exe 生产java文件
+                    XX.proto -> protoc.exe -> xx.java -> ProtoBufEncoder -> 二进制流 -> ProtoBufDecoder -> xx.java
+
+
+
+    netty入站出站规则:
+        C -> S :出站 Inbound 编码
+        S -> C :入站 Outbound 解码
+        结论:
+            不论解码器handler还是编码器handler，即接收的消息类型必须与待处理的消息类型一致，否则该handler不会被执行
+            在解码器进行数据解码时，需要判断缓存区buffer的数据是否足够，否则接收到的数据结果会与期望结果不一致
+    其他解码器:
+        ReplayingDecoder： 继承 ByteToMessageDecoder 参数 S指定用户状态管理的状态 其中Void表示不用状态管理
+        使用这个类，就不需要调用readableBytes方法
+        缺点:
+            并不是所有的byteBuf操作都支持，不支持会抛出一个UnSupportedOperationException
+            ReplayingDecoder 在某些情况下可能稍慢于ByteMessageDecoder，例如网络缓慢时且数据格式复杂，会分成碎片 速度变慢
+
+        LineBasedFrameDecoder： 使用尾控制字符 \n \r\n作为分隔符来解析
+        DelimiterBasedFrameDecoder：使用自定义的特殊字符作为消息的分隔符。
+        HttpObjectDecoder:一个http数据的解码器
+        LengthFieldBasedFrameDecoder:通过指定长度来标志整包消息，这样就可以自动处理粘包和半包消息
