@@ -246,3 +246,23 @@ TCP粘包跟拆包:
     解决:
         使用自定义协议 + 编解码器
         解决服务器端每次读取数据长度的问题
+
+ChannelPipeline调度handler:
+    1.Context包装handler，多个Context在pipeline中形成双向链表，入站方向为inbound，在head节点开始，出站方法叫outbound，由tail节点开始；
+    2.而节点中间的传递通过AbstractChannelHandlerContext类内部的fire系列方法，找到当前节点的下一个节点不断循环传播，是一个过滤器形式完成对handler的调度。
+
+任务加入异步线程池:
+    1.在handler中添加异步，可能更加自由，需要异步的地方异步，不用的就不需要，
+    因为异步会拖长接口响应时间。
+    因为需要将任务放进mpscTask中，如果IO时间很短，task很多，可能一个循环下来，都没有时间执行整个task，导致响应时间不达标；
+    2.使用netty的标准方法(即加入到队列)，但是这样会将整个handler都交给业务线程池，不论耗时不耗时，都加入到队列中，不够灵活；
+
+
+netty实现RPC:
+    远程过程调用:一个计算机的程序允许调用另外一台的子程序，无须额外的交互作用编程
+    Client为服务消费者，Server为服务提供者
+
+    整体流程 :
+    Client：           ClientStub                                       ServerStub:        Server：
+    1.请求 -> 2.编码 -> 3.发送                                            4.接收 -> 5.解码 -> 6.调用api
+    12.响应<-11.解码 <- 10.接收                                           9.发送 <- 8.编码 <- 7.响应
